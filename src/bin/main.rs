@@ -2,11 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use dittolive_ditto::{identity::*, prelude::*};
 use serde_json::json;
-use std::{
-    self,
-    str::FromStr,
-    sync::{mpsc, Arc},
-};
+use std::{self, str::FromStr, sync::mpsc};
 
 /// A template app to demo Ditto's Rust SDK
 ///
@@ -37,7 +33,7 @@ fn main() -> Result<()> {
     // Initialize Ditto SDK client
     let app_id = AppId::from_str(&args.app_id)?;
     let ditto = Ditto::builder()
-        .with_root(Arc::new(PersistentRoot::from_current_exe()?))
+        .with_temp_dir()
         .with_minimum_log_level(LogLevel::Debug)
         .with_identity(move |ditto_root| {
             let shared_token = args.shared_token;

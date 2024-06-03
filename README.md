@@ -1,4 +1,4 @@
-# `template-ditto-rust`
+# `template-rust`
 
 This is a template starter project for showing how to develop
 applications using Ditto's Rust SDK.
