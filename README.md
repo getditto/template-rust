@@ -19,6 +19,12 @@ To get started with Ditto, [visit the Ditto Portal and create an App][2],
 then find your "App ID" and Playground Token. You'll use these to
 authenticate your SDK instances so they can securely sync with each other.
 
+![Ditto Portal with AppID and Playground Token](.github/assets/ditto-portal.png)
+
+> The AppID and token in this screenshot are fake, you need to create
+> your own Ditto account and App, then copy the AppID and Playground Token
+> generated for you :)
+
 Next, copy the `.env.sample` file and rename it to `.env` to use it:
 
 ```
@@ -31,9 +37,9 @@ Edit the `.env` file and paste your App ID and Playground Token:
 #!/usr/bin/env bash
 # ...
 
-export APP_ID=""         # Your App ID
-export SHARED_TOKEN=""   # Your Playground Token
-export COLLECTION="cars" # The Collection to watch
+export APP_ID=""           # Your App ID
+export PLAYGROUND_TOKEN="" # Your Playground Token
+export COLLECTION="cars"   # The Collection to watch
 ```
 
 For now we'll keep the default value for `COLLECTION="cars"`, but you can

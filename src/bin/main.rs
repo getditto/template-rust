@@ -18,8 +18,8 @@ struct Args {
     app_id: String,
 
     /// The Playground token used to authenticate (found at portal.ditto.live)
-    #[clap(long, env = "SHARED_TOKEN")]
-    shared_token: String,
+    #[clap(long, env = "PLAYGROUND_TOKEN")]
+    playground_token: String,
 
     /// The Collection which we would like to sync with to observe changes
     #[clap(long, env = "COLLECTION")]
@@ -36,7 +36,7 @@ fn main() -> Result<()> {
         .with_temp_dir()
         .with_minimum_log_level(LogLevel::Debug)
         .with_identity(move |ditto_root| {
-            let shared_token = args.shared_token;
+            let shared_token = args.playground_token;
             let enable_cloud_sync = true;
             let custom_auth_url = None;
             OnlinePlayground::new(
