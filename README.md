@@ -46,6 +46,9 @@ Now you can build and run the available sample apps. Be sure to check the
 
 ### Simple Querybuilder
 
+This sample shows how to use Ditto's "Query Builder" API to
+create and subscribe to documents:
+
 ```
 cargo run --bin=simple_querybuilder -- --collection="cars"
 # ...
@@ -54,10 +57,24 @@ Inserted document with id=6659efed00288113001bb5a9
 
 ### Simple DQL
 
+This sample shows how to use Ditto's new "Ditto Query Lanuage" (or DQL)
+to insert and query for documents:
+
 ```
 cargo run --bin=simple_dql -- create-car --make="ford" --year="2016" --color="blue"
 
 cargo run --bin=simple_dql -- query-cars --color="blue"
+```
+
+### Simple Attachments
+
+This sample shows how to upload and download large files using Ditto's
+Attachments API:
+
+```
+cargo run --bin=simple_attachments -- upload-photo --path=$HOME/Downloads/photo.png
+
+cargo run --bin=simple_attachments -- download-photo --name=photo.png
 ```
 
 [0]: https://ditto.live
