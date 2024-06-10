@@ -39,18 +39,25 @@ Edit the `.env` file and paste your App ID and Playground Token:
 
 export APP_ID=""           # Your App ID
 export PLAYGROUND_TOKEN="" # Your Playground Token
-export COLLECTION="cars"   # The Collection to watch
 ```
 
-For now we'll keep the default value for `COLLECTION="cars"`, but you can
-change that if you want to try writing documents in different collections.
+Now you can build and run the available sample apps. Be sure to check the
+`--help` menu to see subcommands and options for each app.
 
-Now, build and run the sample app with cargo:
+### Simple Querybuilder
 
 ```
-cargo run
+cargo run --bin=simple_querybuilder -- --collection="cars"
 # ...
 Inserted document with id=6659efed00288113001bb5a9
+```
+
+### Simple DQL
+
+```
+cargo run --bin=simple_dql -- create-car --make="ford" --year="2016" --color="blue"
+
+cargo run --bin=simple_dql -- query-cars --color="blue"
 ```
 
 [0]: https://ditto.live
