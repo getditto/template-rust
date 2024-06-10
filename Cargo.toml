@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "template-ditto-rust"
-path = "src/bin/main.rs"
+name = "simple-querybuilder"
+path = "src/bin/simple_querybuilder.rs"
 
 [dependencies]
 anyhow = "1"
