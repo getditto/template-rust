@@ -1088,6 +1088,7 @@ dependencies = [
  "dittolive-ditto-sys",
  "dotenv",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
