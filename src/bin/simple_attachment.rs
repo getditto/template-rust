@@ -164,8 +164,9 @@ async fn download_photo(store: &Store, name: &str) -> Result<()> {
 }
 
 /// Query for the photo attachment we want and wait for it to finish downloading
-async fn receive_photo_document(store: &Store, name: &str) -> Result<Arc<QueryResultItem>> {
-    let (tx, mut rx) = tokio::sync::watch::channel(None);
+async fn receive_photo_document(store: &Store, name: &str) -> Result<QueryResultItem> {
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    let mut tx = Some(tx);
     let observer = store.register_observer(
         "SELECT * FROM COLLECTION photos (photo_attachment ATTACHMENT)",
         Some(
@@ -176,13 +177,12 @@ async fn receive_photo_document(store: &Store, name: &str) -> Result<Arc<QueryRe
         ),
         move |query_result| {
             if let Some(item) = query_result.get_item(0) {
-                tx.send_replace(Some(Arc::new(item)));
+                _ = tx.take().map(|tx| tx.send(item));
             }
         },
     )?;
 
-    let downloaded = rx.wait_for(|download_item| download_item.is_some()).await?;
-    let query_item = downloaded.clone().context("downloaded item should exist")?;
+    let query_item = rx.await?;
     observer.cancel();
 
     Ok(query_item)
