@@ -14,16 +14,16 @@ use std::{self, str::FromStr, sync::Arc};
 ///
 /// Example: Insert a new car to the "cars" collection
 ///
-/// > simple_dql create-car --make=ford --year=2016 --color=blue
+/// > `simple_dql create-car --make=ford --year=2016 --color=blue`
 ///
 /// Example: Query blue cars from the "cars" collection
 ///
-/// > simple_dql query-cars --color=blue
+/// > `simple_dql query-cars --color=blue`
 ///
 /// If you have not set up ENV variables with your AppID and Token,
 /// you can alternatively pass them as arguments like this:
 ///
-/// > simple_dql --app-id="YOUR_APP_ID" --token="YOUR_PLAYGROUND_TOKEN" create-car --make=ford --year=2016 --color=blue
+/// > `simple_dql --app-id="YOUR_APP_ID" --token="YOUR_PLAYGROUND_TOKEN" create-car --make=ford --year=2016 --color=blue`
 #[derive(Debug, Parser)]
 struct Cli {
     #[clap(flatten)]
