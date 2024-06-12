@@ -1,10 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use dittolive_ditto::{
-    identity::*,
-    prelude::*,
-    store::dql::{QueryArguments, QueryResult},
-};
+use dittolive_ditto::{identity::*, prelude::*, store::dql::QueryResult};
 use std::{self, str::FromStr, sync::Arc};
 
 /// A sample app to demo Ditto's Rust SDK, see long '--help' for examples
@@ -40,11 +36,11 @@ struct Cli {
 /// Args needed for any command,
 #[derive(Debug, Parser)]
 struct Args {
-    /// The Ditto App ID to sync with (found at portal.ditto.live)
+    /// The Ditto App ID to sync with (found at <https://portal.ditto.live>)
     #[clap(long, env = "APP_ID")]
     app_id: String,
 
-    /// The Playground token used to authenticate (found at portal.ditto.live)
+    /// The Playground token used to authenticate (found at <https://portal.ditto.live>)
     #[clap(long, env = "PLAYGROUND_TOKEN")]
     playground_token: String,
 }
@@ -146,13 +142,16 @@ async fn create_car(store: &Store, make: &str, year: &str, color: &str) -> Resul
 }
 
 async fn query_cars(store: &Store, color: &str) -> Result<QueryResult> {
-    let query_args = QueryArguments::from(serde_json::json!({
+    let query_args = serde_json::json!({
         "color": color,
-    }));
+    });
 
     // Execute a DQL query and get a result set
     let result_set = store
-        .execute("SELECT * FROM cars where color = :color", Some(query_args))
+        .execute(
+            "SELECT * FROM cars where color = :color",
+            Some(query_args.into()),
+        )
         .await?;
 
     Ok(result_set)
