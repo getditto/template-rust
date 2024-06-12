@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use dittolive_ditto::{identity::*, prelude::*};
+use dittolive_ditto::{identity::*, prelude::*, store::dql::QueryResultItem};
 use std::{
     self,
     collections::HashMap,
@@ -101,6 +101,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+/// Upload a photo (or arbitrary file) to the Ditto Store from a Path
 async fn upload_photo(store: &Store, path: &Path) -> Result<()> {
     let photo_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("photo");
 
@@ -124,25 +125,13 @@ async fn upload_photo(store: &Store, path: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Download a photo (or arbitrary file) from the Ditto Store by the file's name
 async fn download_photo(store: &Store, name: &str) -> Result<()> {
-    let result = store
-        .execute(
-            "SELECT * FROM COLLECTION photos (photo_attachment ATTACHMENT)",
-            Some(
-                serde_json::json!({
-                    "photo_name": name
-                })
-                .into(),
-            ),
-        )
-        .await?;
+    // Query and wait for the attachment to download
+    let result_item = receive_photo_document(store, name).await?;
 
-    let result_item = result
-        .get_item(0)
-        .context("result set contained no items")?
-        .value();
-
-    let photo_attachment = result_item
+    let result_value = result_item.value();
+    let photo_attachment = result_value
         .get("photo_attachment")
         .context("failed to find photo_attachment")?;
 
@@ -167,9 +156,34 @@ async fn download_photo(store: &Store, name: &str) -> Result<()> {
             Completed { attachment } => {
                 println!("Successfully downloaded attachment {photo_id:?} to path {}", attachment.path().display());
             }
-            Deleted => unreachable!("attachment should not get deleted while fetching"),
+            Deleted => panic!("attachment should not get deleted while fetching"),
         }
     })?;
 
     Ok(())
+}
+
+/// Query for the photo attachment we want and wait for it to finish downloading
+async fn receive_photo_document(store: &Store, name: &str) -> Result<Arc<QueryResultItem>> {
+    let (tx, mut rx) = tokio::sync::watch::channel(None);
+    let observer = store.register_observer(
+        "SELECT * FROM COLLECTION photos (photo_attachment ATTACHMENT)",
+        Some(
+            serde_json::json!({
+                "photo_name": name
+            })
+            .into(),
+        ),
+        move |query_result| {
+            if let Some(item) = query_result.get_item(0) {
+                tx.send_replace(Some(Arc::new(item)));
+            }
+        },
+    )?;
+
+    let downloaded = rx.wait_for(|download_item| download_item.is_some()).await?;
+    let query_item = downloaded.clone().context("downloaded item should exist")?;
+    observer.cancel();
+
+    Ok(query_item)
 }
