@@ -61,9 +61,9 @@ This sample shows how to use Ditto's new "Ditto Query Lanuage" (or DQL)
 to insert and query for documents:
 
 ```
-cargo run --bin=simple_dql -- create-car --make="ford" --year="2016" --color="blue"
+cargo run --bin=simple_dql -- insert-car --make="ford" --color="blue"
 
-cargo run --bin=simple_dql -- query-cars --color="blue"
+cargo run --bin=simple_dql -- select-cars --color="blue"
 ```
 
 ### Simple Attachments
