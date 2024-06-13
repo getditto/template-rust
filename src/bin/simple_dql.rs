@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use dittolive_ditto::{identity::*, prelude::*, store::dql::QueryResult};
+use serde::{Deserialize, Serialize};
 use std::{self, str::FromStr, sync::Arc};
 
 /// A sample app to demo Ditto's Rust SDK, see long '--help' for examples
@@ -14,11 +15,11 @@ use std::{self, str::FromStr, sync::Arc};
 ///
 /// Example: Insert a new car to the "cars" collection
 ///
-/// > `simple_dql create-car --make=ford --year=2016 --color=blue`
+/// > `simple_dql insert-car --make=ford --color=blue`
 ///
-/// Example: Query blue cars from the "cars" collection
+/// Example: Select blue cars from the "cars" collection
 ///
-/// > `simple_dql query-cars --color=blue`
+/// > `simple_dql select-cars --color=blue`
 ///
 /// If you have not set up ENV variables with your AppID and Token,
 /// you can alternatively pass them as arguments like this:
@@ -48,21 +49,17 @@ struct Args {
 #[derive(Debug, Subcommand)]
 enum Cmd {
     /// Create a new "car" document with a make, year, and color
-    CreateCar {
-        /// The make of the car, e.g. Ford, Chevrolet
-        #[clap(long)]
-        make: String,
-
-        /// The year of the car
-        #[clap(long)]
-        year: String,
-
+    InsertCar {
         /// The color of the car
         #[clap(long)]
         color: String,
+
+        /// The make of the car, e.g. Ford, Chevrolet
+        #[clap(long)]
+        make: String,
     },
     /// Query existing "car" documents based on their color property
-    QueryCars {
+    SelectCars {
         /// Query all cars with this color
         #[clap(long)]
         color: String,
@@ -71,7 +68,7 @@ enum Cmd {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenv::dotenv().ok();
+    dotenv::dotenv().ok(); // Load variables from .env
     let cli = Cli::parse();
 
     // Initialize Ditto SDK client
@@ -96,24 +93,22 @@ async fn main() -> Result<()> {
 
     // Begin sync, then open the Ditto Store so we can insert or query documents
     ditto.start_sync()?;
-    let store = ditto.store();
 
     match cli.cmd {
-        Cmd::CreateCar { make, year, color } => {
-            let result_set = create_car(store, &make, &year, &color).await?;
+        Cmd::InsertCar { make, color } => {
+            let car = Car { color, make };
+            let result_set = dql_insert_car(&ditto, &car).await?;
             let mutations = result_set.mutated_document_ids();
             let s = if mutations.len() == 1 { "" } else { "s" };
-            println!("Mutated {} document{s}", mutations.len());
+            println!("Inserted {} car{s}", mutations.len());
         }
-        Cmd::QueryCars { color } => {
-            let result_set = query_cars(store, &color).await?;
-            let count = result_set.item_count();
-            println!("Found {count} cars with color={}", color);
+        Cmd::SelectCars { color } => {
+            let cars = dql_select_cars(&ditto, &color).await?;
+            println!("Selected {} cars with color={color}", cars.len());
 
             // Print the contents of each queried document
-            for item in result_set.iter() {
-                let json = item.deserialize_value::<serde_json::Value>()?;
-                println!("Car with color={}: {json}", color);
+            for car in &cars {
+                println!("Car with color={color}: {car:?}");
             }
         }
     }
@@ -121,38 +116,48 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn create_car(store: &Store, make: &str, year: &str, color: &str) -> Result<QueryResult> {
-    let result_set = store
+#[derive(Debug, Serialize, Deserialize)]
+struct Car {
+    pub color: String,
+    pub make: String,
+}
+
+async fn dql_insert_car(ditto: &Ditto, car: &Car) -> Result<QueryResult> {
+    let store = ditto.store();
+    let query_result = store
         .execute(
             "INSERT INTO cars DOCUMENTS (:newCar)",
             Some(
                 serde_json::json!({
-                    "newCar": {
-                        "make": make,
-                        "year": year,
-                        "color": color
-                    }
+                    "newCar": car
                 })
                 .into(),
             ),
         )
         .await?;
 
-    Ok(result_set)
+    Ok(query_result)
 }
 
-async fn query_cars(store: &Store, color: &str) -> Result<QueryResult> {
-    let query_args = serde_json::json!({
-        "color": color,
-    });
-
-    // Execute a DQL query and get a result set
-    let result_set = store
+/// Execute a DQL query and get a result set
+async fn dql_select_cars(ditto: &Ditto, color: &str) -> Result<Vec<Car>> {
+    let store = ditto.store();
+    let query_result = store
         .execute(
-            "SELECT * FROM cars where color = :color",
-            Some(query_args.into()),
+            "SELECT * FROM cars where color = :myColor",
+            Some(
+                serde_json::json!({
+                    "myColor": color
+                })
+                .into(),
+            ),
         )
         .await?;
 
-    Ok(result_set)
+    let cars = query_result
+        .iter()
+        .map(|query_item| query_item.deserialize_value::<Car>())
+        .collect::<Result<Vec<Car>, _>>()?;
+
+    Ok(cars)
 }
