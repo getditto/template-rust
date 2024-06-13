@@ -1087,6 +1087,7 @@ dependencies = [
  "dittolive-ditto",
  "dittolive-ditto-sys",
  "dotenv",
+ "serde",
  "serde_json",
  "tokio",
 ]
